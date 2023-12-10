@@ -15,7 +15,7 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import br.edu.ifsp.scl.sdm.todolist.R
-import br.edu.ifsp.scl.sdm.todolist.controller.MainController
+import br.edu.ifsp.scl.sdm.todolist.controller.TaskPresenter
 import br.edu.ifsp.scl.sdm.todolist.databinding.FragmentMainBinding
 import br.edu.ifsp.scl.sdm.todolist.model.entity.Task
 import br.edu.ifsp.scl.sdm.todolist.model.entity.Task.Companion.TASK_DONE_FALSE
@@ -23,7 +23,7 @@ import br.edu.ifsp.scl.sdm.todolist.model.entity.Task.Companion.TASK_DONE_TRUE
 import br.edu.ifsp.scl.sdm.todolist.view.adapter.OnTaskClickListener
 import br.edu.ifsp.scl.sdm.todolist.view.adapter.TaskAdapter
 
-class MainFragment : Fragment(), OnTaskClickListener {
+class MainFragment : Fragment(), OnTaskClickListener, TaskPresenter.TaskView {
     private lateinit var fmb: FragmentMainBinding
 
     // Data source
@@ -45,9 +45,9 @@ class MainFragment : Fragment(), OnTaskClickListener {
         const val TASK_FRAGMENT_REQUEST_KEY = "TASK_FRAGMENT_REQUEST_KEY"
     }
 
-    // Controller
-    private val mainController: MainController by lazy {
-        MainController(this)
+    // Presenter
+    private val taskPresenter: TaskPresenter by lazy {
+        TaskPresenter(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,11 +63,11 @@ class MainFragment : Fragment(), OnTaskClickListener {
                 task?.also { receivedTask ->
                     taskList.indexOfFirst { it.time == receivedTask.time }.also { position ->
                         if (position != -1) {
-                            mainController.editTask(receivedTask)
+                            taskPresenter.editTask(receivedTask)
                             taskList[position] = receivedTask
                             tasksAdapter.notifyItemChanged(position)
                         } else {
-                            mainController.insertTask(receivedTask)
+                            taskPresenter.insertTask(receivedTask)
                             taskList.add(receivedTask)
                             tasksAdapter.notifyItemInserted(taskList.lastIndex)
                         }
@@ -81,7 +81,7 @@ class MainFragment : Fragment(), OnTaskClickListener {
                 )
             }
         }
-        mainController.getTasks()
+        taskPresenter.getTasks()
     }
 
     override fun onCreateView(
@@ -107,7 +107,7 @@ class MainFragment : Fragment(), OnTaskClickListener {
     override fun onTaskClick(position: Int) = navigateToTaskFragment(position, false)
 
     override fun onRemoveTaskMenuItemClick(position: Int) {
-        mainController.removeTask(taskList[position])
+        taskPresenter.removeTask(taskList[position])
         taskList.removeAt(position)
         tasksAdapter.notifyItemRemoved(position)
     }
@@ -117,7 +117,7 @@ class MainFragment : Fragment(), OnTaskClickListener {
     override fun onDoneCheckBoxClick(position: Int, checked: Boolean) {
         taskList[position].apply {
             done = if (checked) TASK_DONE_TRUE else TASK_DONE_FALSE
-            mainController.editTask(this)
+            taskPresenter.editTask(this)
         }
     }
 
@@ -129,7 +129,7 @@ class MainFragment : Fragment(), OnTaskClickListener {
         }
     }
 
-    fun updateTaskList(tasks: List<Task>) {
+    override fun updateTaskList(tasks: List<Task>) {
         taskList.clear()
         tasks.forEachIndexed { index, task ->
             taskList.add(task)
